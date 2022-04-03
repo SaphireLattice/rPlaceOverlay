@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Transgender Flag Template
-// @namespace    https://lunar.exchange/
-// @version      0.1
+// @namespace    http://tampermonkey.net/
+// @version      0.4
 // @description  Try to take over the canvas!
 // @author       SaphireLattice - this script, oralekin - original script, Ender#5769 - image
 // @match        https://hot-potato.reddit.com/embed*
@@ -9,64 +9,177 @@
 // @downloadURL  https://raw.githubusercontent.com/SaphireLattice/rPlaceOverlay/master/overlayScript.user.js
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
-if (window.top !== window.self) {
-    window.addEventListener('load', async () => {
-        const repoRoot = "https://raw.githubusercontent.com/SaphireLattice/rPlaceOverlay/master/";
-        async function get(url, parseJson = true, headers = {}) {
-            return new Promise((resolve, reject) => {
-                let xhr = GM_xmlhttpRequest({
-                    method: "GET",
-                    url,
-                    onload: (r) => resolve(parseJson ? JSON.parse(r.response) : r.response),
-                    onerror: (e) => reject(e),
-                    headers: headers ?? parseJson ? {
-                        "Accept": "application/json"
-                    } : {}
-                });
-            });
+
+
+async function get(url, parseJson = true, headers = {}) {
+    return new Promise((resolve, reject) => {
+        let xhr = GM_xmlhttpRequest({
+            method: "GET",
+            url,
+            onload: (r) => resolve(parseJson ? JSON.parse(r.response) : r.response),
+            onerror: (e) => reject(e),
+            headers: headers ?? parseJson ? {
+                "Accept": "application/json"
+            } : {}
+        });
+    });
+}
+
+class PlaceOverlay {
+    scriptVersion = "0.4";
+    repoRoot = "https://raw.githubusercontent.com/SaphireLattice/rPlaceOverlay/master/";
+
+    enabled = true;
+
+    overlays = [];
+
+    overlaysContainer = document.createElement("div");
+    toggleButton = document.createElement("div");
+    modalContainer = document.createElement("div");
+    modalMain = document.createElement("div");
+
+    placeRoot = null;
+
+    tempToggle = false;
+
+    constructor() {
+        window.addEventListener('load', () => this.init());
+    }
+
+    async init() {
+        console.log("Trans rights!", this);
+        this.domInit();
+        await this.updateOverlays();
+    }
+
+    updateButton() {
+        if (this.enabled) {
+            this.overlaysContainer.style.display = "block";
+            this.toggleButton.innerText = "🟢 | Disable overlay";
+        } else {
+            this.overlaysContainer.style.display = "none";
+            this.toggleButton.innerText = "🔴 | Enable overlay ";
         }
-        function makeOverlay(src, x = 0, y = 0, w = 2000, h = 1000) {
-            const imgElem = document.createElement("img");
-            imgElem.src = src;
-            imgElem.style = `position: absolute;left: ${x};top: ${y};image-rendering: pixelated;width: ${w}px;height: ${h}px;`;
-            return imgElem;
+    }
+
+    toggle(forceTo = null) {
+        this.enabled = forceTo == null ? !this.enabled : !!forceTo;
+        this.updateButton();
+    }
+
+    async updateOverlays() {
+        this.overlays.forEach(o => o.elem.remove());
+
+        const data = await get(this.repoRoot + "overlays.json");
+
+        if (data.scriptVersion != this.scriptVersion) {
+            this.modalMain.innerText = "Your template script is out of date! Reload the page or update the script";
+            this.modalContainer.style.display = "flex";
         }
 
-        const overlaysContainer = document.createElement("div");
-        overlaysContainer.style = "position: absolute; left: 0; top: 0;";
-        window.onkeyup = function(e) { if (e.key === 'h') overlaysContainer.style.display = 'block'; }
-        window.onkeydown = function(e) { if (e.key === 'h') overlaysContainer.style.display = 'none'; }
-
-        const data = await get(repoRoot + "overlays.json");
-
-        const knownOverlays = data.overlays.map(
+        this.overlays = data.overlays.map(
             meta => {
                 return {
                     meta,
-                    elem: makeOverlay(meta.url, meta.posX, meta.posY, meta.width, meta.height)
+                    elem: this.makeOverlayImage(meta.url, meta.posX, meta.posY, meta.width, meta.height)
                 }
             }
         );
-        console.log("Trans rights!", knownOverlays);
 
-        knownOverlays.forEach(o => overlaysContainer.appendChild(o.elem));
+        this.overlays.forEach(o => this.overlaysContainer.appendChild(o.elem));
+    }
 
-        const placeRoot = document.getElementsByTagName("mona-lisa-embed")[0].shadowRoot;
+    domInit() {
+        this.placeRoot = document.getElementsByTagName("mona-lisa-embed")[0].shadowRoot;
 
-        placeRoot.children[0].getElementsByTagName("mona-lisa-canvas")[0].shadowRoot.children[0].appendChild(overlaysContainer);
+        this.setStyles();
 
-        placeRoot.querySelector(".bottom-controls").appendChild(
-            (() => {
-                const t = document.createElement("div");
-                t.style = "height: 24px;display: flex;justify-content: center;align-items: center;background-color: #fff;color: #000;border-radius: 26px;font-size: 14px;font-weight: 700;line-height: 17px;box-shadow: 0 4px 10px rgba(0,0,0,.25);font-family: var(--mona-lisa-font-sans);padding: 0 2em;pointer-events: auto;cursor: pointer;";
-                t.innerText = "Toggle overlay"
-                t.addEventListener("click", () => {
-                    overlaysContainer.style.display = overlaysContainer.style.display == "none" ? "block" : "none";
-                })
-                return t;
-            })()
+        // when a key is being held down, we get multiple onkeydown events, so we need to track that
+        window.addEventListener("keydown",
+            (event) => {
+                if ((event.key === "h") && !this.tempToggle) {
+                    this.tempToggle = true;
+                    this.toggle();
+                }
+            }
+        );
+        window.addEventListener("keyup",
+            event => {
+                if ((event.key === "h") && this.tempToggle) {
+                    this.tempToggle = false;
+                    this.toggle();
+                }
+            }
         )
+        this.toggleButton.addEventListener("click", () => this.toggle());
 
-        console.log("Init finished, see ya!");
-    }, false);
+        this.modalContainer.appendChild(this.modalMain);
+        document.querySelector("body").appendChild(this.modalContainer);
+
+        this.placeRoot.children[0].getElementsByTagName("mona-lisa-canvas")[0].shadowRoot.children[0].appendChild(this.overlaysContainer);
+
+        this.updateButton();
+        this.placeRoot.querySelector(".bottom-controls").appendChild(this.toggleButton);
+    }
+
+    setStyles() {
+        this.toggleButton.style =
+            `height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fff;
+            color: #000;
+            border-radius: 26px;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 17px;
+            box-shadow: 0 4px 10px rgba(0,0,0,.25);
+            font-family: var(--mona-lisa-font-sans);
+            padding: 0 2em;
+            pointer-events: auto;
+            cursor: pointer;`;
+
+        this.modalContainer.style = `position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            pointer-events: none;
+            align-items: center;
+            justify-content: center;
+            display: none;`;
+
+        this.modalMain.style = `min-height: 24px;
+            min-width: 100px;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            background-color: rgb(255, 255, 255);
+            color: rgb(0, 0, 0);
+            border-radius: 26px;
+            font-size: 14px;
+            line-height: 17px;
+            box-shadow: rgba(0, 0, 0, 0.25) 0px 4px 10px;
+            font-family: var(--mona-lisa-font-sans);
+            padding: 1em 2em;
+            pointer-events: auto;`
+    }
+
+    makeOverlayImage(src, x = 0, y = 0, w = 2000, h = 1000) {
+        const imgElem = document.createElement("img");
+        imgElem.src = src;
+        imgElem.style = `position: absolute;
+            left: ${x};
+            top: ${y};
+            image-rendering: pixelated;
+            width: ${w}px;
+            height: ${h}px;`
+        return imgElem;
+    }
+}
+
+
+if (window.top !== window.self) {
+    new PlaceOverlay();
 }

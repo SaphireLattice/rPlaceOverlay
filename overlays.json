@@ -1,5 +1,6 @@
 {
     "version": "0.1",
+    "scriptVersion": "0.4",
     "overlays": [
         {
             "name": "r/transplace",
