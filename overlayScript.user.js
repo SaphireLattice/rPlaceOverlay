@@ -82,7 +82,7 @@ class PlaceOverlay {
             meta => {
                 return {
                     meta,
-                    elem: this.makeOverlayImage(meta.url, meta.posX, meta.posY, meta.width, meta.height)
+                    elem: this.makeOverlayImage(meta.url, meta.posX, meta.posY, meta.width ?? -1, meta.height ?? -1, meta.scale ?? 3)
                 }
             }
         );
@@ -167,15 +167,21 @@ class PlaceOverlay {
             pointer-events: auto;`
     }
 
-    makeOverlayImage(src, x = 0, y = 0, w = 2000, h = 1000) {
+    makeOverlayImage(src, x = 0, y = 0, w = 2000, h = 1000, scale = 3) {
         const imgElem = document.createElement("img");
         imgElem.src = src;
-        imgElem.style = `position: absolute;
-            left: ${x};
-            top: ${y};
-            image-rendering: pixelated;
-            width: ${w}px;
-            height: ${h}px;`
+        imgElem.addEventListener("load", () => {
+            if (w == -1)
+                w = imgElem.width / scale;
+            if (h == -1)
+                h = imgElem.height / scale;
+            imgElem.style = `position: absolute;
+                left: ${x};
+                top: ${y};
+                image-rendering: pixelated;
+                width: ${w}px;
+                height: ${h}px;`
+        })
         return imgElem;
     }
 }
