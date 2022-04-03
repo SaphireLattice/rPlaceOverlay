@@ -70,9 +70,10 @@ class PlaceOverlay {
     async updateOverlays() {
         this.overlays.forEach(o => o.elem.remove());
 
-        const data = await get(this.repoRoot + "overlays.json");
+        const data = await get(this.repoRoot + `overlays.json?cachebust=${new Date().getTime()}`);
 
         if (data.scriptVersion != this.scriptVersion) {
+            console.log(`Version mismatch, got "${data.scriptVersion}", expected "${this.scriptVersion}"`);
             this.modalMain.innerText = "Your template script is out of date! Reload the page or update the script";
             this.modalContainer.style.display = "flex";
         }
