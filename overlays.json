@@ -1,0 +1,14 @@
+{
+    "version": "0.1",
+    "overlays": [
+        {
+            "name": "r/transplace",
+            "description": "The main overlay for r/transplace",
+            "url": "https://raw.githubusercontent.com/Ender0112/Transgender-Flag-Template/main/place.png",
+            "posX": 0,
+            "posY": 0,
+            "width": 2000,
+            "height": 1000
+        }
+    ]
+}
