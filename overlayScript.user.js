@@ -85,6 +85,7 @@ class PlaceOverlay {
         }
 
         this.overlays = data.overlays.map((meta) => {
+            console.log(`Adding "${meta.name}" from ${meta.url}`)
             return {
                 meta,
                 elem: this.makeOverlayImage(
@@ -185,6 +186,7 @@ class PlaceOverlay {
         }
         imgElem.src = src;
         imgElem.addEventListener("load", () => {
+            console.log(src, imgElem.width, imgElem.height);
             if (w == -1) w = imgElem.width / scale;
             if (h == -1) h = imgElem.height / scale;
             imgElem.style = `position: absolute;
