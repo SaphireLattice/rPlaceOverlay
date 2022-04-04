@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Transgender Flag Template
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.5
 // @description  Try to take over the canvas!
 // @author       SaphireLattice - this script, oralekin - original script, Ender#5769 - image
 // @match        https://hot-potato.reddit.com/embed*
@@ -190,8 +190,8 @@ class PlaceOverlay {
             if (w == -1) w = imgElem.width / scale;
             if (h == -1) h = imgElem.height / scale;
             imgElem.style = `position: absolute;
-                left: ${x};
-                top: ${y};
+                left: ${x}px;
+                top: ${y}px;
                 image-rendering: pixelated;
                 width: ${w}px;
                 height: ${h}px;`;
