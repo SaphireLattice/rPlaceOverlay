@@ -9,6 +9,13 @@
             "posX": 0,
             "posY": 0,
             "scale": 3
+        },
+        {
+            "name": "hollow knight and co",
+            "url": "https://raw.githubusercontent.com/Saphire/rPlaceOverlay/master/hk_zone_1292-40.png",
+            "posX": 1292,
+            "posY": 40,
+            "scale": 3
         }
     ]
 }
